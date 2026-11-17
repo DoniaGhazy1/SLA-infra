@@ -1,0 +1,21 @@
+# rules/evaluator.py
+
+import re
+import operator
+
+OPS = {
+    ">=": operator.ge,
+    "<=": operator.le,
+    "==": operator.eq,
+    "!=": operator.ne,
+    ">": operator.gt,
+    "<": operator.lt
+}
+
+def eval_condition(value: float, condition: str) -> bool:
+    pattern = r"value\\s*(" + "|".join(map(re.escape, OPS.keys())) + r")\\s*([0-9\\.]+)"
+    m = re.search(pattern, condition)
+    if not m:
+        raise ValueError(f"Unsupported condition: {condition}")
+    op_sym, num = m.group(1), m.group(2)
+    return OPS[op_sym](value, float(num))

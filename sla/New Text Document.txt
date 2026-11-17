@@ -1,0 +1,20 @@
+[
+  {
+    "device_id": "device-1234",
+    "bucket": "wifi1_bucket",
+    "measurement": "Wifi1_KPI",
+    "field": "wifi_kpis_DL_THPUT",
+    "condition": "value >= 10",
+    "window": "1h",
+    "severity": "critical"
+  },
+  {
+    "device_id": "device-1234",
+    "bucket": "4g_cellular_bucket",
+    "measurement": "4G_Cellular_KPI",
+    "field": "radio_kpis_LATENCY",
+    "condition": "value <= 50",
+    "window": "30m",
+    "severity": "warning"
+  }
+]

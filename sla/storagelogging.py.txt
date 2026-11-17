@@ -1,0 +1,22 @@
+# storage/logging.py
+
+import os
+import csv
+from datetime import datetime
+
+LOG_DIR  = "logs"
+LOG_FILE = os.path.join(LOG_DIR, "sla_readings.csv")
+HEADER   = ["timestamp","device_id","bucket","measurement","field","value"]
+
+os.makedirs(LOG_DIR, exist_ok=True)
+
+def log_reading(device_id, bucket, measurement, field, value):
+    is_new = not os.path.exists(LOG_FILE)
+    with open(LOG_FILE, "a", newline="") as f:
+        writer = csv.writer(f)
+        if is_new:
+            writer.writerow(HEADER)
+        writer.writerow([
+            datetime.utcnow().isoformat(),
+            device_id, bucket, measurement, field, value
+        ])

@@ -1,0 +1,9 @@
+# config.py
+
+INFLUX_URL = "http://localhost:8086"
+INFLUX_TOKEN = "your-influxdb-token"
+INFLUX_ORG = "your-org"
+
+SLA_POLICY_FILE = "sla_policies.json"
+DEVICE_ID = "device-1234"
+POLL_INTERVAL_SECONDS = 60

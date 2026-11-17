@@ -1,0 +1,69 @@
+# api/rest.py
+
+from fastapi import FastAPI, HTTPException, Path
+from pydantic import BaseModel
+import json
+import threading
+import os
+
+from config import SLA_POLICY_FILE
+
+app = FastAPI(title="File-Backed SLA Policy API")
+lock = threading.Lock()
+
+class SlaRuleIn(BaseModel):
+    bucket: str
+    measurement: str
+    field: str
+    condition: str
+    window: str
+    severity: str
+
+class SlaRuleOut(SlaRuleIn):
+    id: int
+    device_id: str
+
+def _read_policies():
+    if not os.path.exists(SLA_POLICY_FILE):
+        return []
+    return json.load(open(SLA_POLICY_FILE))
+
+def _write_policies(policies):
+    json.dump(policies, open(SLA_POLICY_FILE, "w"), indent=2)
+
+@app.get("/devices/{device_id}/slas", response_model=list[SlaRuleOut])
+def list_slas(device_id: str):
+    policies = _read_policies()
+    return [{**p, "id": idx} for idx, p in enumerate(policies) if p.get("device_id")==device_id]
+
+@app.post("/devices/{device_id}/slas", response_model=SlaRuleOut, status_code=201)
+def add_sla(device_id: str, payload: SlaRuleIn):
+    with lock:
+        policies = _read_policies()
+        new = payload.dict()
+        new["device_id"] = device_id
+        policies.append(new)
+        _write_policies(policies)
+        idx = len(policies)-1
+    return {**new, "id": idx}
+
+@app.put("/devices/{device_id}/slas/{sla_id}", response_model=SlaRuleOut)
+def update_sla(device_id: str, sla_id: int = Path(..., ge=0), payload: SlaRuleIn=None):
+    with lock:
+        policies = _read_policies()
+        if sla_id >= len(policies) or policies[sla_id].get("device_id")!=device_id:
+            raise HTTPException(404, "SLA rule not found")
+        updated = payload.dict()
+        updated["device_id"] = device_id
+        policies[sla_id] = updated
+        _write_policies(policies)
+    return {**updated, "id": sla_id}
+
+@app.delete("/devices/{device_id}/slas/{sla_id}", status_code=204)
+def delete_sla(device_id: str, sla_id: int = Path(..., ge=0)):
+    with lock:
+        policies = _read_policies()
+        if sla_id >= len(policies) or policies[sla_id].get("device_id")!=device_id:
+            raise HTTPException(404, "SLA rule not found")
+        policies.pop(sla_id)
+        _write_policies(policies)
